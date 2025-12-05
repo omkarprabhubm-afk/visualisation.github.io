@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Sorting & Searching Visualizer</title>
+
+<style>
+
+/* -----------------------------------------------------
+   THEME VARIABLES (Light + Dark Mode)
+----------------------------------------------------- */
+:root {
+  --bg: #f4f4f7;
+  --text: #0f172a;
+  --panel: #ffffff;
+  --panel-border: #d0d0dd;
+  --accent: #4f46e5;
+  --accent2: #6366f1;
+  --bar1: #6366f1;
+  --bar2: #3b82f6;
+  --compare: #f97316;
+  --swap: #22c55e;
+  --found: #22c55e;
+  --mid: #facc15;
+  --log-bg: #ebeafd;
+  --hash-bg: #fafaff;
+}
+
+.dark {
+  --bg: #050816;
+  --text: #e5e7eb;
+  --panel: #0f172a;
+  --panel-border: #1e293b;
+  --accent: #6366f1;
+  --accent2: #8b5cf6;
+  --bar1: #4f46e5;
+  --bar2: #0ea5e9;
+  --compare: #f97316;
+  --swap: #22c55e;
+  --found: #22c55e;
+  --mid: #facc15;
+  --log-bg: rgba(15,23,42,0.85);
+  --hash-bg: #020617;
+}
+
+/* -----------------------------------------------------
+   Global Styles
+----------------------------------------------------- */
+body {
+  margin: 0;
+  padding: 20px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  transition: background 0.3s, color 0.3s;
+}
+
+h1 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 18px;
+  color: var(--text);
+}
+
+/* -----------------------------------------------------
+   Floating Theme Toggle Button
+----------------------------------------------------- */
+#theme-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#theme-toggle:hover {
+  transform: scale(1.07);
+}
+
+/* -----------------------------------------------------
+   Control Panel
+----------------------------------------------------- */
+.panel {
+  max-width: 1100px;
+  width: 100%;
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  border: 1px solid var(--panel-border);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.controls-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+
+input, select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  transition: background 0.3s, color 0.3s;
+}
+
+button {
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: none;
+  transition: transform 0.1s ease;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px dashed var(--panel-border);
+  color: var(--text);
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.status-line {
+  font-size: 13px;
+  margin-top: -6px;
+}
+
+.status-line.error {
+  color: #ef4444;
+}
+
+/* -----------------------------------------------------
+   Visual Area Layout
+----------------------------------------------------- */
+.visual-area {
+  max-width: 1100px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 14px;
+}
+
+.visual-box {
+  background: var(--panel);
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: 0.3s ease;
+}
+
+.visual-title {
+  font-size: 14px;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+.array-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 8px;
+  flex: 1;
+}
+
+.bar {
+  width: 22px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--bar1), var(--bar2));
+  text-align: center;
+  font-size: 11px;
+  color: white;
+  padding-bottom: 4px;
+  transition: 0.2s;
+}
+
+.bar.compare {
+  background: var(--compare);
+  transform: translateY(-4px);
+}
+
+.bar.swap {
+  background: var(--swap);
+  transform: translateY(-6px);
+}
+
+.bar.found {
+  background: var(--found);
+}
+
+.bar.mid {
+  background: var(--mid);
+}
+
+/* -----------------------------------------------------
+   Hash Table
+----------------------------------------------------- */
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+  gap: 6px;
+}
+
+.hash-cell {
+  background: var(--hash-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 4px;
+  text-align: center;
+  font-size: 11px;
+}
+
+.hash-cell.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent2);
+}
+
+/* -----------------------------------------------------
+   Log Box
+----------------------------------------------------- */
+.log {
+  background: var(--log-bg);
+  border-radius: 12px;
+  padding: 8px;
+  height: 120px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+/* -----------------------------------------------------
+   SLIDING PSEUDOCODE DRAWER (D1)
+----------------------------------------------------- */
+
+#drawer {
+  position: fixed;
+  bottom: -40%;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: var(--panel);
+  border-radius: 16px 16px 0 0;
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.35);
+  transition: bottom 0.35s ease;
+  padding: 10px 16px;
+  overflow-y: auto;
+}
+
+#drawer.open {
+  bottom: 0;
+}
+
+#drawer-handle {
+  width: 60px;
+  height: 6px;
+  background: var(--panel-border);
+  border-radius: 6px;
+  margin: 0 auto 10px auto;
+}
+
+#pseudocode {
+  white-space: pre-wrap;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+}
+
+#drawer-toggle {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+#drawer-toggle:hover {
+  transform: translateX(-50%) scale(1.05);
+}
+
+/* -----------------------------------------------------
+   Responsive
+----------------------------------------------------- */
+@media (max-width: 900px) {
+  .visual-area {
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Floating Theme Toggle -->
+<div id="theme-toggle">🌙</div>
+
+<h1>Sorting & Searching Visualizer</h1>
+<div class="subtitle">
+  Visualize Bubble, Insertion, Selection sort + Linear, Binary, Hash search.  
+  Includes custom array, hash table builder, theme toggle & pseudocode drawer.
+</div>
+
+<!-- Control Panel -->
+<div class="panel">
+  <div class="controls">
+
+    <!-- First Row -->
+    <div class="controls-row">
+      <div class="controls-group">
+        <label>Algorithm Type
+          <select id="mode-select">
+            <option value="sort">Sorting</option>
+            <option value="search">Searching</option>
+          </select>
+        </label>
+
+        <label>Algorithm
+          <select id="algo-select">
+            <option value="bubble">Bubble Sort</option>
+            <option value="insertion">Insertion Sort</option>
+            <option value="selection">Selection Sort</option>
+          </select>
+        </label>
+
+        <label>Elements
+          <input type="number" id="size-input" min="5" max="40" value="15">
+        </label>
+
+        <label>Speed
+          <input type="range" id="speed-input" min="20" max="400" value="120">
+        </label>
+
+        <label id="search-key-wrapper" style="display:none;">Search Key
+          <input type="number" id="search-key" value="10">
+        </label>
+      </div>
+
+      <div class="controls-group">
+        <button class="btn-secondary" id="generate-btn">Random</button>
+        <button class="btn-primary" id="start-btn">Run</button>
+        <button class="btn-secondary" id="reset-btn">Reset</button>
+      </div>
+    </div>
+
+    <!-- Custom Array Input -->
+    <div class="controls-row">
+      <label style="flex:1;">Custom Array (comma-separated)
+        <input type="text" id="custom-array-input" placeholder="Example: 10, 5, 33, 7">
+      </label>
+      <button class="btn-ghost" id="set-array-btn">Set</button>
+    </div>
+
+    <div id="error-line" class="status-line"></div>
+  </div>
+</div>
+
+<!-- Visual Area -->
+<div class="visual-area">
+
+  <!-- Left Box – Array -->
+  <div class="visual-box">
+    <div class="visual-title">Main Array</div>
+    <div id="array-container" class="array-container"></div>
+    <div id="status-line" class="status-line">Ready.</div>
+  </div>
+
+  <!-- Right Box – Hash + Log -->
+  <div class="visual-box">
+    <div class="visual-title">Hash Table</div>
+
+    <div class="controls-group" style="margin-bottom:6px;">
+      <label>Table Size
+        <input type="number" id="hash-size-input" min="3" max="31" value="11">
+      </label>
+
+      <button class="btn-secondary" id="build-hash-from-array-btn">Build</button>
+
+      <label>Insert Key
+        <input type="number" id="hash-insert-key" placeholder="25">
+      </label>
+
+      <button class="btn-secondary" id="hash-insert-btn">Insert</button>
+      <button class="btn-ghost" id="hash-clear-btn">Clear</button>
+    </div>
+
+    <div id="hash-container">
+      <div style="font-size:12px;opacity:0.6;">No table yet.</div>
+    </div>
+
+    <div class="visual-title" style="margin-top:10px;">Log</div>
+    <div id="log" class="log"></div>
+  </div>
+</div>
+
+<!-- Sliding Drawer -->
+<div id="drawer">
+  <div id="drawer-handle"></div>
+  <div id="pseudocode">(pseudocode will appear here)</div>
+</div>
+<div id="drawer-toggle">Pseudocode ▲</div>
+
+<script>
+
+/* ============================================================
+   GLOBAL STATE
+============================================================ */
+let array = [];
+let originalArray = [];
+let isRunning = false;
+
+let hashTable = null;
+let hashSize = 11;
+
+/* Element references */
+const arrayContainer = document.getElementById("array-container");
+const hashContainer  = document.getElementById("hash-container");
+const logBox         = document.getElementById("log");
+const modeSelect     = document.getElementById("mode-select");
+const algoSelect     = document.getElementById("algo-select");
+const sizeInput      = document.getElementById("size-input");
+const speedInput     = document.getElementById("speed-input");
+const searchKeyWrap  = document.getElementById("search-key-wrapper");
+const searchKeyInput = document.getElementById("search-key");
+const statusLine     = document.getElementById("status-line");
+const errorLine      = document.getElementById("error-line");
+
+const customArrayInput = document.getElementById("custom-array-input");
+const setArrayBtn = document.getElementById("set-array-btn");
+
+const buildHashBtn = document.getElementById("build-hash-from-array-btn");
+const hashSizeInput = document.getElementById("hash-size-input");
+const hashInsertKeyInp = document.getElementById("hash-insert-key");
+const hashInsertBtn = document.getElementById("hash-insert-btn");
+const hashClearBtn = document.getElementById("hash-clear-btn");
+
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+function getSpeed() { return Number(speedInput.value); }
+
+function clearError() {
+  errorLine.textContent = "";
+  errorLine.classList.remove("error");
+}
+
+function showError(msg) {
+  errorLine.textContent = msg;
+  errorLine.classList.add("error");
+}
+
+function log(msg) {
+  const div = document.createElement("div");
+  div.textContent = msg;
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function clearLog() { logBox.innerHTML = ""; }
+
+
+/* ============================================================
+   RENDER ARRAY
+============================================================ */
+function renderArray(highlight = {}) {
+  arrayContainer.innerHTML = "";
+
+  if (!array.length) return;
+
+  const maxVal = Math.max(...array, 1);
+
+  array.forEach((val, i) => {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+
+    bar.style.height = (val / maxVal * 180 + 20) + "px";
+
+    if (highlight.compare?.includes(i)) bar.classList.add("compare");
+    if (highlight.swap?.includes(i))    bar.classList.add("swap");
+    if (highlight.found?.includes(i))   bar.classList.add("found");
+    if (highlight.mid === i)            bar.classList.add("mid");
+
+    bar.textContent = val;
+    arrayContainer.appendChild(bar);
+  });
+}
+
+
+/* ============================================================
+   PARSE CUSTOM ARRAY INPUT
+============================================================ */
+function parseIntegerList(str) {
+  clearError();
+  if (!str.trim()) {
+    showError("Input empty. Please enter integers.");
+    return null;
+  }
+
+  const tokens = str.split(",").map(s => s.trim()).filter(s => s.length);
+  const result = [];
+  const intRegex = /^-?\d+$/;
+
+  for (const tok of tokens) {
+    if (!intRegex.test(tok)) {
+      showError("Invalid input: Only integers allowed.");
+      return null;
+    }
+    result.push(parseInt(tok, 10));
+  }
+  return result;
+}
+
+
+/* ============================================================
+   GENERATE + RESET ARRAY
+============================================================ */
+function generateArray() {
+  clearError();
+  clearLog();
+
+  const n = Math.max(5, Math.min(40, Number(sizeInput.value) || 10));
+  const arr = [];
+
+  for (let i = 0; i < n; i++) {
+    arr.push(Math.floor(Math.random() * 90) + 10);
+  }
+
+  array = arr;
+  originalArray = [...arr];
+  hashTable = null;
+
+  renderArray();
+  renderHashTable();
+  statusLine.textContent = "Generated new random array.";
+}
+
+function resetArray() {
+  clearError();
+  clearLog();
+
+  array = [...originalArray];
+  hashTable = null;
+
+  renderArray();
+  renderHashTable();
+  statusLine.textContent = "Array restored.";
+}
+
+function setCustomArray() {
+  if (isRunning) return;
+
+  const parsed = parseIntegerList(customArrayInput.value);
+  if (!parsed) {
+    statusLine.textContent = "Array not set.";
+    return;
+  }
+
+  array = parsed;
+  originalArray = [...parsed];
+  sizeInput.value = parsed.length;
+
+  renderArray();
+  renderHashTable();
+  clearLog();
+
+  statusLine.textContent = "Custom array applied.";
+}
+
+
+/* ============================================================
+   SORTING ALGORITHMS
+============================================================ */
+async function bubbleSort() {
+  const n = array.length;
+
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      if (!isRunning) return;
+
+      renderArray({ compare: [j, j+1] });
+      log(`Compare a[${j}] and a[${j+1}]`);
+      await sleep(getSpeed());
+
+      if (array[j] > array[j+1]) {
+        [array[j], array[j+1]] = [array[j+1], array[j]];
+        renderArray({ swap: [j, j+1] });
+        log(`Swapped positions ${j} and ${j+1}`);
+        await sleep(getSpeed());
+      }
+    }
+  }
+
+  renderArray();
+  statusLine.textContent = "Bubble sort completed.";
+}
+
+async function insertionSort() {
+  const n = array.length;
+
+  for (let i = 1; i < n; i++) {
+    let key = array[i];
+    let j = i - 1;
+
+    log(`Take key = ${key}`);
+
+    while (j >= 0 && array[j] > key) {
+      if (!isRunning) return;
+
+      array[j+1] = array[j];
+      renderArray({ swap: [j, j+1] });
+      log(`Shift a[${j}] → position ${j+1}`);
+
+      j--;
+      await sleep(getSpeed());
+    }
+
+    array[j+1] = key;
+    renderArray({ swap: [j+1] });
+    await sleep(getSpeed());
+  }
+
+  renderArray();
+  statusLine.textContent = "Insertion sort completed.";
+}
+
+async function selectionSort() {
+  const n = array.length;
+
+  for (let i = 0; i < n-1; i++) {
+    let minIdx = i;
+
+    for (let j = i+1; j < n; j++) {
+      if (!isRunning) return;
+
+      renderArray({ compare: [j, minIdx] });
+      log(`Compare a[${j}] with a[${minIdx}]`);
+      await sleep(getSpeed());
+
+      if (array[j] < array[minIdx]) {
+        minIdx = j;
+      }
+    }
+
+    if (minIdx !== i) {
+      [array[i], array[minIdx]] = [array[minIdx], array[i]];
+      renderArray({ swap: [i, minIdx] });
+      await sleep(getSpeed());
+    }
+  }
+
+  renderArray();
+  statusLine.textContent = "Selection sort completed.";
+}
+
+
+/* ============================================================
+   SEARCHING HELPERS
+============================================================ */
+async function ensureSortedForBinary() {
+  const n = array.length;
+  for (let i = 1; i < n; i++) {
+    const key = array[i];
+    let j = i - 1;
+
+    while (j >= 0 && array[j] > key) {
+      array[j+1] = array[j];
+      j--;
+    }
+    array[j+1] = key;
+  }
+
+  renderArray();
+  log("Array sorted internally for binary search.");
+  await sleep(getSpeed());
+}
+
+
+/* ============================================================
+   LINEAR SEARCH
+============================================================ */
+async function linearSearch(key) {
+  for (let i = 0; i < array.length; i++) {
+    if (!isRunning) return;
+
+    renderArray({ compare: [i] });
+    log(`Check a[${i}] = ${array[i]}`);
+    await sleep(getSpeed());
+
+    if (array[i] === key) {
+      renderArray({ found: [i] });
+      log(`Found key at index ${i}`);
+      statusLine.textContent = `Found ${key} at index ${i}.`;
+      return;
+    }
+  }
+
+  log("Not found.");
+  statusLine.textContent = "Key not found.";
+}
+
+
+/* ============================================================
+   BINARY SEARCH
+============================================================ */
+async function binarySearch(key) {
+  await ensureSortedForBinary();
+
+  let low = 0, high = array.length - 1;
+
+  while (low <= high) {
+    if (!isRunning) return;
+
+    const mid = Math.floor((low + high) / 2);
+
+    renderArray({ mid, compare: [mid] });
+    log(`mid=${mid}, a[mid]=${array[mid]}`);
+    await sleep(getSpeed());
+
+    if (array[mid] === key) {
+      renderArray({ found: [mid] });
+      log(`Found key at index ${mid}`);
+      statusLine.textContent = `Found at index ${mid}`;
+      return;
+    }
+
+    if (array[mid] < key) {
+      low = mid + 1;
+      log("Search right half");
+    } else {
+      high = mid - 1;
+      log("Search left half");
+    }
+
+    await sleep(getSpeed());
+  }
+
+  log("Key not found.");
+  statusLine.textContent = "Key not found.";
+}
+
+
+/* ============================================================
+   HASH TABLE LOGIC
+============================================================ */
+function readHashSize() {
+  let s = Number(hashSizeInput.value);
+  if (!Number.isInteger(s) || s < 3) s = 3;
+  if (s > 31) s = 31;
+  hashSize = s;
+  hashSizeInput.value = s;
+}
+
+function renderHashTable(active = null) {
+  if (!hashTable) {
+    hashContainer.innerHTML = "<div style='opacity:0.6;'>No table yet.</div>";
+    return;
+  }
+
+  hashContainer.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.className = "hash-grid";
+
+  hashTable.forEach((val, i) => {
+    const cell = document.createElement("div");
+    cell.className = "hash-cell";
+    if (i === active) cell.classList.add("active");
+
+    cell.innerHTML = `
+      <div style="opacity:0.5; font-size:10px">${i}</div>
+      <div>${val !== null ? val : ""}</div>
+    `;
+
+    grid.appendChild(cell);
+  });
+
+  hashContainer.appendChild(grid);
+}
+
+function buildHashTableFromArray() {
+  clearError();
+  readHashSize();
+
+  hashTable = new Array(hashSize).fill(null);
+
+  for (const val of array) {
+    let idx = ((val % hashSize) + hashSize) % hashSize;
+    while (hashTable[idx] !== null) {
+      idx = (idx + 1) % hashSize;
+    }
+    hashTable[idx] = val;
+  }
+
+  renderHashTable();
+  log("Hash table built from array.");
+}
+
+function insertIntoHashTable(key) {
+  clearError();
+  readHashSize();
+
+  if (!hashTable) {
+    hashTable = new Array(hashSize).fill(null);
+  }
+
+  let idx = ((key % hashSize) + hashSize) % hashSize;
+  let start = idx;
+
+  while (hashTable[idx] !== null) {
+    idx = (idx + 1) % hashSize;
+    if (idx === start) {
+      showError("Hash table is full.");
+      return;
+    }
+  }
+
+  hashTable[idx] = key;
+  renderHashTable(idx);
+  log(`Inserted ${key} at index ${idx}`);
+}
+
+async function hashSearch(key) {
+  clearError();
+  readHashSize();
+
+  if (!hashTable) buildHashTableFromArray();
+
+  let idx = ((key % hashSize) + hashSize) % hashSize;
+  let start = idx;
+
+  log(`Start probing at index ${idx}`);
+
+  while (hashTable[idx] !== null) {
+    if (!isRunning) return;
+
+    renderHashTable(idx);
+    await sleep(getSpeed());
+
+    if (hashTable[idx] === key) {
+      log(`Found at index ${idx}`);
+      statusLine.textContent = `Found at hash index ${idx}`;
+      return;
+    }
+
+    idx = (idx + 1) % hashSize;
+    if (idx === start) break;
+
+    log(`Probe next index → ${idx}`);
+    await sleep(getSpeed());
+  }
+
+  log("Key not found in hash table.");
+  statusLine.textContent = "Not in hash table.";
+}
+
+
+/* ============================================================
+   RUN BUTTON LOGIC
+============================================================ */
+async function runAlgorithm() {
+  if (isRunning) return;
+
+  if (!array.length) {
+    showError("Array is empty.");
+    return;
+  }
+
+  clearError();
+  clearLog();
+  isRunning = true;
+
+  const mode = modeSelect.value;
+  const algo = algoSelect.value;
+
+  if (mode === "sort") {
+    statusLine.textContent = `Running ${algo} sort…`;
+
+    if (algo === "bubble")      await bubbleSort();
+    if (algo === "insertion")   await insertionSort();
+    if (algo === "selection")   await selectionSort();
+  }
+
+  else {
+    const key = Number(searchKeyInput.value);
+
+    if (!Number.isInteger(key)) {
+      showError("Search key must be integer.");
+      isRunning = false;
+      return;
+    }
+
+    statusLine.textContent = `Searching for ${key}…`;
+
+    if (algo === "linear") await linearSearch(key);
+    if (algo === "binary") await binarySearch(key);
+    if (algo === "hash")   await hashSearch(key);
+  }
+
+  isRunning = false;
+}
+
+</script>
+<script>
+/* ============================================================
+   PSEUDOCODE ENGINE
+============================================================ */
+
+const pseudocodeBox = document.getElementById("pseudocode");
+
+const PSEUDOCODE = {
+  sort_bubble: `
+Bubble Sort (ascending):
+
+for i from 0 to n-2:
+    for j from 0 to n-2-i:
+        if a[j] > a[j+1]:
+            swap a[j], a[j+1]
+`,
+
+  sort_insertion: `
+Insertion Sort (ascending):
+
+for i from 1 to n-1:
+    key = a[i]
+    j = i - 1
+    while j >= 0 and a[j] > key:
+        a[j+1] = a[j]
+        j = j - 1
+    a[j+1] = key
+`,
+
+  sort_selection: `
+Selection Sort (ascending):
+
+for i from 0 to n-2:
+    minIndex = i
+    for j from i+1 to n-1:
+        if a[j] < a[minIndex]:
+            minIndex = j
+    swap a[i], a[minIndex]
+`,
+
+  search_linear: `
+Linear Search:
+
+for i from 0 to n-1:
+    if a[i] == key:
+        return i   // found
+return -1           // not found
+`,
+
+  search_binary: `
+Binary Search (array must be sorted):
+
+low = 0
+high = n-1
+while low <= high:
+    mid = floor((low + high) / 2)
+    if a[mid] == key:
+        return mid
+    else if a[mid] < key:
+        low = mid + 1
+    else:
+        high = mid - 1
+return -1
+`,
+
+  search_hash: `
+Hash Search (open addressing, linear probing):
+
+hash(x) = x mod tableSize
+
+idx = hash(key)
+start = idx
+
+while table[idx] is not empty:
+    if table[idx] == key:
+        return idx      // found
+    idx = (idx + 1) mod tableSize
+    if idx == start:
+        break           // full loop
+return -1               // not found
+`,
+};
+
+function updatePseudocode() {
+  const mode = modeSelect.value;    // "sort" or "search"
+  const algo = algoSelect.value;    // e.g. "bubble", "linear", "hash"
+  const key = `${mode}_${algo}`;
+  pseudocodeBox.textContent = PSEUDOCODE[key] || "(No pseudocode available for this algorithm.)";
+}
+
+
+/* ============================================================
+   SLIDING DRAWER LOGIC (D1)
+============================================================ */
+
+const drawer = document.getElementById("drawer");
+const drawerToggle = document.getElementById("drawer-toggle");
+let drawerOpen = false;
+
+function setDrawer(open) {
+  drawerOpen = open;
+  if (drawerOpen) {
+    drawer.classList.add("open");
+    drawerToggle.textContent = "Pseudocode ▼";
+  } else {
+    drawer.classList.remove("open");
+    drawerToggle.textContent = "Pseudocode ▲";
+  }
+}
+
+drawerToggle.addEventListener("click", () => {
+  setDrawer(!drawerOpen);
+});
+
+document.getElementById("drawer-handle").addEventListener("click", () => {
+  setDrawer(!drawerOpen);
+});
+
+
+/* ============================================================
+   THEME TOGGLE (LIGHT / DARK)
+============================================================ */
+
+const themeToggle = document.getElementById("theme-toggle");
+
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.body.classList.add("dark");
+    themeToggle.textContent = "☀️";
+  } else {
+    document.body.classList.remove("dark");
+    themeToggle.textContent = "🌙";
+  }
+  localStorage.setItem("visualizer-theme", theme);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("visualizer-theme");
+  if (saved === "light" || saved === "dark") {
+    applyTheme(saved);
+  } else {
+    // default: dark mode
+    applyTheme("dark");
+  }
+}
+
+themeToggle.addEventListener("click", () => {
+  const isDark = document.body.classList.contains("dark");
+  applyTheme(isDark ? "light" : "dark");
+});
+
+
+/* ============================================================
+   EVENT WIRING
+============================================================ */
+
+// Mode change: switch between sorting/search algorithms
+modeSelect.addEventListener("change", () => {
+  const mode = modeSelect.value;
+  algoSelect.innerHTML = "";
+
+  if (mode === "sort") {
+    algoSelect.innerHTML = `
+      <option value="bubble">Bubble Sort</option>
+      <option value="insertion">Insertion Sort</option>
+      <option value="selection">Selection Sort</option>
+    `;
+    searchKeyWrap.style.display = "none";
+  } else {
+    algoSelect.innerHTML = `
+      <option value="linear">Linear Search</option>
+      <option value="binary">Binary Search</option>
+      <option value="hash">Hash Search</option>
+    `;
+    searchKeyWrap.style.display = "block";
+  }
+
+  updatePseudocode();
+});
+
+// Algorithm change: update pseudocode
+algoSelect.addEventListener("change", updatePseudocode);
+
+// Buttons
+document.getElementById("generate-btn").addEventListener("click", () => {
+  if (isRunning) return;
+  generateArray();
+  updatePseudocode();
+});
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+  if (isRunning) return;
+  resetArray();
+});
+
+document.getElementById("start-btn").addEventListener("click", () => {
+  runAlgorithm().then(updatePseudocode);
+});
+
+setArrayBtn.addEventListener("click", () => {
+  setCustomArray();
+});
+
+// Hash controls
+buildHashBtn.addEventListener("click", () => {
+  if (isRunning) return;
+  if (!array.length) {
+    showError("Array is empty, cannot build hash table.");
+    return;
+  }
+  buildHashTableFromArray();
+});
+
+hashInsertBtn.addEventListener("click", () => {
+  if (isRunning) return;
+  const val = Number(hashInsertKeyInp.value);
+  if (!Number.isInteger(val)) {
+    showError("Insert key must be integer.");
+    return;
+  }
+  insertIntoHashTable(val);
+});
+
+hashClearBtn.addEventListener("click", () => {
+  if (isRunning) return;
+  hashTable = null;
+  renderHashTable();
+  clearLog();
+  log("Cleared hash table.");
+});
+
+
+/* ============================================================
+   INITIALIZATION
+============================================================ */
+
+initTheme();
+generateArray();
+updatePseudocode();
+setDrawer(false);  // start closed
+
+</script>
+</body>
+</html>
